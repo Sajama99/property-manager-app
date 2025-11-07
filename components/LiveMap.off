@@ -1,0 +1,85 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+
+// Load Leaflet types only if available on client
+let RL: any = null
+let L: any = null
+if (typeof window !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    RL = require('react-leaflet')
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    L = require('leaflet')
+    require('leaflet/dist/leaflet.css')
+}
+
+export type LivePoint = {
+    id: string
+    name: string
+    lat: number
+    lng: number
+    lastSeen: Date | null
+    me?: boolean
+}
+
+const defaultCenter: [number, number] = [40.4406, -79.9959] // Pittsburgh
+
+export default function LiveMap({ points }: { points: LivePoint[] }) {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => { setMounted(true) }, [])
+
+    // Don’t try to render Leaflet until we’re on the client and react-leaflet is loaded
+    if (!mounted || !RL || !L) {
+        return (
+            <div style={{ height: 500, width: '100%', display: 'grid', placeItems: 'center', border: '1px solid #eee' }}>
+                Loading map…
+            </div>
+        )
+    }
+
+    const { MapContainer, TileLayer, Marker, Popup } = RL
+
+    const icon = useMemo(() => L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+    }), [])
+
+    const hasPoints = Array.isArray(points) && points.length > 0
+    const center = hasPoints ? [points[0].lat, points[0].lng] as [number, number] : defaultCenter
+
+    return (
+        <div style={{ height: 500, width: '100%' }}>
+            <MapContainer
+                center={center}
+                zoom={hasPoints ? 12 : 11}
+                scrollWheelZoom
+                style={{ height: '100%', width: '100%' }}
+            >
+                <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="© OpenStreetMap contributors"
+                />
+
+                {hasPoints
+                    ? points.map(p => (
+                        <Marker key={p.id} position={[p.lat, p.lng]} icon={icon}>
+                            <Popup>
+                                <strong>{p.name}</strong>
+                                {p.lastSeen ? <div>Last seen: {new Date(p.lastSeen).toLocaleString()}</div> : null}
+                            </Popup>
+                        </Marker>
+                    ))
+                    : (
+                        <Marker position={defaultCenter} icon={icon}>
+                            <Popup>No points yet</Popup>
+                        </Marker>
+                    )
+                }
+            </MapContainer>
+        </div>
+    )
+}

@@ -1,0 +1,16 @@
+'use client'
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }, reset: () => void }) {
+  return (
+    <html>
+      <body style={{ padding: 24, fontFamily: 'ui-sans-serif, system-ui' }}>
+        <h1 style={{ fontWeight: 700, fontSize: 20 }}>Something went wrong</h1>
+        <pre style={{ whiteSpace: 'pre-wrap', background: '#f6f6f6', padding: 12, borderRadius: 8 }}>
+          {error?.message ?? 'Unknown error'}
+        </pre>
+        <button onClick={() => reset()} style="margin-top:12px;padding:8px 12px;border-radius:8px;background:black;color:white">
+          Try again
+        </button>
+      </body>
+    </html>
+  )
+}
